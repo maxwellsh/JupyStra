@@ -1,7 +1,7 @@
 # spawn_server.py - Spawn a Jupyter Notebook server on Orchestra
 #
-# v 0.0.3
-# rev 2017-03-06 (MS: Server job submission and pinging for RUN status)
+# v 0.0.4
+# rev 2017-03-06 (MS: output bash script to connect to server)
 # Notes: 
 
 import paramiko
@@ -9,6 +9,8 @@ import argparse
 import getpass
 import time
 import re
+
+import script_writer
 
 class Spawner(object):
     """ A class for spanwing Jupyter notebook servers on Orchestra
@@ -27,6 +29,7 @@ class Spawner(object):
         self.run_addtn_cmds()
         self.submit_server_job()
         self.get_exec_host()
+        self.write_shell_script()
 
     def _prompt_password(self):
         password = getpass.getpass("Orchestra password: ")
@@ -85,6 +88,10 @@ class Spawner(object):
         out = stdout.readline()
         self.exec_host = out.split()[5].split('.')[0]
 
+    def write_shell_script(self):
+        sw = script_writer.ShellWriter(self.exec_host, port_local=self.args.local_port, port_remote=self.args.remote_port, port_jup=self.args.port)
+        print("bash script written to file {}".format(sw.fname))
+
     def ping_job(self):
         """ Ping job until status is run
         """
@@ -117,6 +124,7 @@ class Spawner(object):
         parser.add_argument('login_ID', type=str, help='your orchestra login ID')
         parser.add_argument('-p', '--port', type=str, default='8888', help='port on Orchestra which to start server')
         parser.add_argument('-L', '--local_port', type=str, default='8888', help='local port on which users connect to orchestra')
+        parser.add_argument('-r', '--remote_port', type=str, default='8888', help='remote port to use on login node')
         parser.add_argument('-R', '--mem', type=str, default='8000', help='memory allocation for server')
         parser.add_argument('-q', '--queue', type=str, default='short', help='queue for server job execution')
         parser.add_argument('-W', '--wall_time', type=str, default='12:00', help='wall time for server existence')

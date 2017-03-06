@@ -1,22 +1,22 @@
 # script_write.py - Write bash script to connect to Jupyter notebook server on Orchestra
 #
-# v 0.0.2
-# rev 2017-03-06 (MS: Created)
+# v 0.0.4
+# rev 2017-03-06 (MS: more informative message)
 # Notes: 
 
-import pathlib2
+# import pathlib2
 import time
 
 class ShellWriter(object):
     def __init__(self, exec_host, name="my_server", port_local=8888, port_remote=8888, port_jup=8888):
-        time_str = time.strftime("%d-%m-%Y")
-        # time_str = time.strftime("%d-%m-%Y-%H:%M:%S")
-        f_out =  "{}_{}.sh".format(name, time_str)
+        # time_str = time.strftime("%d-%m-%Y")
+        time_str = time.strftime("%d-%m-%Y-%H:%M:%S")
+        self.fname =  "{}_{}.sh".format(name, time_str)
 
-        self.f = open(f_out, 'w')
+        self.f = open(self.fname, 'w')
 
         self._write_help()
-        self._write_msg()
+        self._write_msg(port_local)
         self._write_ssh(exec_host, port_local, port_remote, port_jup)
 
         self.f.close()
@@ -53,15 +53,15 @@ fi
 """
         self.f.write(hlp)
 
-    def _write_msg(self):
+    def _write_msg(self, port_local):
         msg = """
 echo "Connecting to server"
 echo "If successful, the script will appear to hand. This is good"
-echo "In you browser, go to: 127.0.0.1:8888"
+echo "In you browser, go to: 127.0.0.1:{}"
 echo ""
 echo "ctrl^c to exit"
 echo ""
-\n"""
+\n""".format(port_local)
         self.f.write(msg)
 
     def _write_ssh(self, exec_host, port_local, port_remote, port_jup):
