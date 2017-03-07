@@ -1,7 +1,7 @@
 # spawn_server.py - Spawn a Jupyter Notebook server on Orchestra
 #
-# v 0.0.4
-# rev 2017-03-06 (MS: output bash script to connect to server)
+# v 0.0.5
+# rev 2017-03-07 (MS: automatically connect to server)
 # Notes: 
 
 import paramiko
@@ -9,8 +9,13 @@ import argparse
 import getpass
 import time
 import re
+import subprocess
 
 import script_writer
+
+def prompt_password():
+    password = getpass.getpass("Orchestra password: ")
+    return password
 
 class Spawner(object):
     """ A class for spanwing Jupyter notebook servers on Orchestra
@@ -20,20 +25,35 @@ class Spawner(object):
     args = None
     password = None
 
-    def __init__(self):
-        self.args = self._parse_args()
+    def __init__(self, args):
+        # self.args = self._parse_args()
+        self.args = args
         self.login = self.args.login_ID
-        self.password = self._prompt_password()
+
+        if not self.args.password:
+            self.password = prompt_password()
+
+        # connect to remote host
         self._connect()
 
+        # Run additional cmds
         self.run_addtn_cmds()
+
+        # Submit job to estblish server and get exec host name
         self.submit_server_job()
         self.get_exec_host()
-        self.write_shell_script()
 
-    def _prompt_password(self):
-        password = getpass.getpass("Orchestra password: ")
-        return password
+        # Write shell script
+        if self.args.script:
+            self.write_shell_script()
+
+        # Connect to server if necessary
+        if self.args.connect:
+            self.connect_to_jup_server()
+
+    # def _prompt_password(self):
+    #     password = getpass.getpass("Orchestra password: ")
+    #     return password
 
     def _connect(self):
         ssh = paramiko.SSHClient()
@@ -90,6 +110,7 @@ class Spawner(object):
 
     def write_shell_script(self):
         sw = script_writer.ShellWriter(self.exec_host, port_local=self.args.local_port, port_remote=self.args.remote_port, port_jup=self.args.port)
+        sw.write_bash_script()
         print("bash script written to file {}".format(sw.fname))
 
     def ping_job(self):
@@ -119,19 +140,34 @@ class Spawner(object):
 
          # return True
 
-    def _parse_args(self):
-        parser = argparse.ArgumentParser(description="Launch a Jupyter notebook server on Orchestra")
-        parser.add_argument('login_ID', type=str, help='your orchestra login ID')
-        parser.add_argument('-p', '--port', type=str, default='8888', help='port on Orchestra which to start server')
-        parser.add_argument('-L', '--local_port', type=str, default='8888', help='local port on which users connect to orchestra')
-        parser.add_argument('-r', '--remote_port', type=str, default='8888', help='remote port to use on login node')
-        parser.add_argument('-R', '--mem', type=str, default='8000', help='memory allocation for server')
-        parser.add_argument('-q', '--queue', type=str, default='short', help='queue for server job execution')
-        parser.add_argument('-W', '--wall_time', type=str, default='12:00', help='wall time for server existence')
-        parser.add_argument('-o', '--outfile', type=str, default='jupyter.lsf', help='LSF output file for server job')
-        parser.add_argument('--cmds', nargs='+', type=str, default=[], help='additional commands to run before launching the server')
+    def connect_to_jup_server(self):
+        sw = script_writer.ShellWriter(self.exec_host, port_local=self.args.local_port, port_remote=self.args.remote_port, port_jup=self.args.port, username=self.login)
+        cmd = sw.get_ssh_cmd()
+    
+        timeout = 12*60*60
 
-        return parser.parse_args()
+        try:
+            p = subprocess.run(cmd, shell=True, timeout=timeout)
+        except KeyboardInterrupt:
+            print("Connection to server killed by user")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Launch a Jupyter notebook server on Orchestra")
+    parser.add_argument('login_ID', type=str, help='your orchestra login ID')
+    parser.add_argument('-P', '--password', type=str, default=None, help='Orchestra password. NEVER USE WHEN RUNNING API YOURSELF!!')
+    parser.add_argument('-p', '--port', type=str, default='8888', help='port on Orchestra which to start server')
+    parser.add_argument('-L', '--local_port', type=str, default='8888', help='local port on which users connect to orchestra')
+    parser.add_argument('-r', '--remote_port', type=str, default='8888', help='remote port to use on login node')
+    parser.add_argument('-R', '--mem', type=str, default='8000', help='memory allocation for server')
+    parser.add_argument('-q', '--queue', type=str, default='short', help='queue for server job execution')
+    parser.add_argument('-W', '--wall_time', type=str, default='12:00', help='wall time for server existence')
+    parser.add_argument('-o', '--outfile', type=str, default='jupyter.lsf', help='LSF output file for server job')
+    parser.add_argument('--cmds', nargs='+', type=str, default=[], help='additional commands to run before launching the server')
+    parser.add_argument('--no_script', dest='script', action='store_false', default=True, help='do not output bash script to connect to server')
+    parser.add_argument('--connect', action='store_true', default=False, help='automatically connect to server after establishing it')
+
+    return parser.parse_args()
 
 if __name__ == "__main__":
-    spawn = Spawner()
+    args = parse_args()
+    spawn = Spawner(args)

@@ -1,25 +1,38 @@
 # script_write.py - Write bash script to connect to Jupyter notebook server on Orchestra
 #
-# v 0.0.4
-# rev 2017-03-06 (MS: more informative message)
+# v 0.0.5
+# rev 2017-03-07 (MS: more flexible script creation)
 # Notes: 
 
 # import pathlib2
 import time
 
 class ShellWriter(object):
-    def __init__(self, exec_host, name="my_server", port_local=8888, port_remote=8888, port_jup=8888):
+    def __init__(self, exec_host, name="my_server", port_local=8888, port_remote=8888, port_jup=8888, username="$1"):
+        self.kwargs = { 'exec_host': exec_host,
+                        'name': name,
+                        'port_local': port_local,
+                        'port_remote': port_remote,
+                        'port_jup': port_jup,
+                        'username': username,
+        }
+
+    def write_bash_script(self):
         # time_str = time.strftime("%d-%m-%Y")
         time_str = time.strftime("%d-%m-%Y-%H:%M:%S")
-        self.fname =  "{}_{}.sh".format(name, time_str)
+        self.fname =  "{}_{}.sh".format(self.kwargs['name'], time_str)
 
         self.f = open(self.fname, 'w')
 
         self._write_help()
-        self._write_msg(port_local)
-        self._write_ssh(exec_host, port_local, port_remote, port_jup)
+        self._write_msg(self.kwargs['port_local'])
+        ssh_cmd = self.get_ssh_cmd()
+        self._write(ssh_cmd)
 
         self.f.close()
+
+    def _write(self, string):
+        self.f.write(string)
 
     def _write_help(self):
         hlp = """ 
@@ -64,12 +77,14 @@ echo ""
 \n""".format(port_local)
         self.f.write(msg)
 
-    def _write_ssh(self, exec_host, port_local, port_remote, port_jup):
-        kwargs = {'port_local': port_local,
-                  'port_remote': port_remote,
-                  'port_jup': port_jup,
-                  'exec_host': exec_host
-        }
+    # def write_ssh(self, exec_host, port_local, port_remote, port_jup, username='$1'):
+    def get_ssh_cmd(self):
+        # kwargs = {'port_local': port_local,
+        #           'port_remote': port_remote,
+        #           'port_jup': port_jup,
+        #           'exec_host': exec_host,
+        #           'username': username
+        # }
 
-        cmd = "ssh -t -L {port_local}:127.0.0.1:{port_remote} -l $1 orchestra.med.harvard.edu \"ssh -N -L {port_remote}:127.0.0.1:{port_jup} {exec_host}\"".format(**kwargs)
-        self.f.write(cmd)
+        cmd = "ssh -t -L {port_local}:127.0.0.1:{port_remote} -l {username} orchestra.med.harvard.edu \"ssh -N -L {port_remote}:127.0.0.1:{port_jup} {exec_host}\"".format(**self.kwargs)
+        return cmd
