@@ -1,8 +1,8 @@
 # spawn_server.py - Spawn a Jupyter Notebook server on Orchestra
 #
-# v 0.1.0
-# rev 2017-03-07 (MS: better additional command handling)
-# Notes: more informative print statements
+# v 0.1.1
+# rev 2017-03-08 (MS: only prompt for password if necessary)
+# Notes: fixed bug if no --cmds passed
 
 import paramiko
 import argparse
@@ -30,8 +30,8 @@ class Spawner(object):
         self.args = args
         self.login = self.args.login_ID
 
-        if not self.args.password:
-            self.password = prompt_password()
+        # if not self.args.password:
+        #     self.password = prompt_password()
 
         # connect to remote host
         self._connect()
@@ -57,8 +57,17 @@ class Spawner(object):
 
     def _connect(self):
         ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect('orchestra.med.harvard.edu', username=self.login, password=self.password)
+
+        # Try without a password (requires e.g. RSA key authentication)
+        try:
+            ssh.connect('orchestra.med.harvard.edu', username=self.login, password=self.password)
+
+        # Prompt for a password on failure
+        except paramiko.ssh_exception.SSHException:
+            self.password = getpass.getpass("Orchestra password: ")
+            ssh.connect('orchestra.med.harvard.edu', username=self.login, password=self.password)
 
         self.ssh = ssh
 
@@ -88,9 +97,13 @@ class Spawner(object):
                    'outfile': self.args.outfile,
                    'port_jup': self.args.port
                  }
-        cmd = "bash -l -c "
-        cmd += "\"" + "; ".join(self.args.cmds)
-        cmd += "; " + "bsub -q {queue} -W {walltime} -o {outfile} 'jupyter notebook --port={port_jup} --browser=\"none\"'\"".format(**kwargs)
+
+        cmd = "bash -l -c \""
+
+        if self.args.cmds:
+            cmd += "; ".join(self.args.cmds) + "; "
+
+        cmd += "bsub -q {queue} -W {walltime} -o {outfile} 'jupyter notebook --port={port_jup} --browser=\"none\"'\"".format(**kwargs)
         # cmd = cmd_addnt + '; ' + cmd_jup
         # print(cmd)
 
