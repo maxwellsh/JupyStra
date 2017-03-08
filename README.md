@@ -117,7 +117,11 @@ optional arguments:
 
    Sure. Simply pass `--cmds "cd path/to/your/dir"` to JupyStra and it will launch in the specified directory.
 
-6. *Why am I prompted for my Orchestra password when JupyStra connects to the server? This is annoying. Make it stop!*
+6. *When I open http://localhost:8888 in my browser, the browser says it can't connect. The terminal says something like `channel 2: open failed: connect failed: Connection refused`*
+
+   Orchestra is just being a bit slow. Wait 10-15 seconds and try again.
+
+7. *Why am I prompted for my Orchestra password when JupyStra connects to the server? This is annoying. Make it stop!*
 
    The reason your prompted for a password is a bit technical. Basically, the architecture of Orchestra prevents direct access to compute nodes,
    so to access the server on a compute node, you must first go through a login node. Due to the security settings of Orchestra, the
@@ -133,7 +137,7 @@ optional arguments:
    5. Run `ssh-copy-id <EXEC_HOST>`
    Next time you connect to a server, you won't be prompted for a password. What's happening? In essence you gave your Orchestra account permission to access itself. Nifty, right?
 
-7. *I tried connecting to the server and got something like this:
+8. *I tried connecting to the server and got something like this:
    ```
    bind: Address already in use
    channel_setup_fwd_listener_tcpip: cannot listen to port: <PORT>
@@ -144,7 +148,7 @@ optional arguments:
    That means the port JupyStra used to connect to the login node is already being used by something else (probably another JupyStra instance).
    While JupyStra attempts to minimize the probability of this occuring, it might still happen. Try spawning another server -- JupyStra will pick a different port.
 
-8. *I'm done with my server but it's still running. How can I kill it?*
+9. *I'm done with my server but it's still running. How can I kill it?*
 
    Login to Orchestra and use the standard `bkill <JOBID>` where `<JOBID>` is the ID of the Jupyter server job.
 
