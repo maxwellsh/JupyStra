@@ -1,8 +1,8 @@
 # spawn_server.py - Spawn a Jupyter Notebook server on Orchestra
 #
-# v 0.1.1
-# rev 2017-03-08 (MS: only prompt for password if necessary)
-# Notes: fixed bug if no --cmds passed
+# v 0.1.2
+# rev 2017-03-08 (MS: randomly generate remote port)
+# Notes: some clean-up
 
 import paramiko
 import argparse
@@ -10,8 +10,24 @@ import getpass
 import time
 import re
 import subprocess
+import random
 
 from . import script_writer
+
+def arg_check(func):
+    """ Decorator to randomly pick remote port for server connection
+        Avoids multiple users trying to listen to the same port
+    """
+    def check(self, args):
+        if args.remote_port == 'random':
+            args.remote_port = random.randint(8000, 20000)
+
+        return func(self, args)
+
+    check.__name__ == func.__name__
+    check.__doc__ == func.__doc__
+
+    return check
 
 def prompt_password():
     password = getpass.getpass("Orchestra password: ")
@@ -25,19 +41,13 @@ class Spawner(object):
     args = None
     password = None
 
+    @arg_check
     def __init__(self, args):
-        # self.args = self._parse_args()
         self.args = args
         self.login = self.args.login_ID
 
-        # if not self.args.password:
-        #     self.password = prompt_password()
-
         # connect to remote host
         self._connect()
-
-        # Run additional cmds
-        # self.run_addtn_cmds()
 
         # Submit job to estblish server and get exec host name
         self.submit_server_job()
@@ -50,10 +60,6 @@ class Spawner(object):
         # Connect to server if necessary
         if self.args.connect:
             self.connect_to_jup_server()
-
-    # def _prompt_password(self):
-    #     password = getpass.getpass("Orchestra password: ")
-    #     return password
 
     def _connect(self):
         ssh = paramiko.SSHClient()
@@ -92,6 +98,7 @@ class Spawner(object):
             self.exec_cmd(cmd)
 
     def submit_server_job(self):
+        print("Establishing Jupyter server on Orchestra")
         kwargs = { 'queue': self.args.queue,
                    'walltime': self.args.wall_time,
                    'outfile': self.args.outfile,
@@ -104,8 +111,6 @@ class Spawner(object):
             cmd += "; ".join(self.args.cmds) + "; "
 
         cmd += "bsub -q {queue} -W {walltime} -o {outfile} 'jupyter notebook --port={port_jup} --browser=\"none\"'\"".format(**kwargs)
-        # cmd = cmd_addnt + '; ' + cmd_jup
-        # print(cmd)
 
         stdin, stdout, stderr = self.exec_cmd(cmd, verbose=False, output=True)
         out = stdout.read().decode('utf-8')
@@ -153,8 +158,6 @@ class Spawner(object):
 
             count += 1
             time.sleep(2)
-
-         # return True
 
     def connect_to_jup_server(self):
         sw = script_writer.ShellWriter(self.exec_host, port_local=self.args.local_port, port_remote=self.args.remote_port, port_jup=self.args.port, username=self.login)

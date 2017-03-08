@@ -2,8 +2,8 @@
 
 # JupyStra.py - top level script for JupySyta package
 #
-# v 0.1.0
-# rev 2017-03-07 (MS: created)
+# v 0.1.2
+# rev 2017-03-08 (MS: randomly generate remote port by default)
 # Notes: 
 
 import argparse
@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument('-P', '--password', type=str, default=None, help='Orchestra password. NEVER USE WHEN RUNNING API YOURSELF!!')
     parser.add_argument('-p', '--port', type=str, default='8888', help='port on Orchestra which to start server')
     parser.add_argument('-L', '--local_port', type=str, default='8888', help='local port on which users connect to orchestra')
-    parser.add_argument('-r', '--remote_port', type=str, default='8888', help='remote port to use on login node')
+    parser.add_argument('-r', '--remote_port', type=str, default='random', help='remote port to use on login node')
     parser.add_argument('-R', '--mem', type=str, default='8000', help='memory allocation for server')
     parser.add_argument('-q', '--queue', type=str, default='short', help='queue for server job execution')
     parser.add_argument('-W', '--wall_time', type=str, default='12:00', help='wall time for server existence')
