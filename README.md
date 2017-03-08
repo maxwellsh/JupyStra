@@ -29,7 +29,7 @@ That's it.
    $ bash Anaconda3-4.3.0-Linux-x86_64.sh
    ```
    and following the onscreen prompts. Be sure to accept the .bashrc modification at the end. Finally, open your .bashrc file
-   and move the final line (something like `export PATH=/path/to/anaconda3/bin:$PATH` to the very top of the file.
+   and move the final line (something like `export PATH=/path/to/anaconda3/bin:$PATH`) to the very top of the file.
 
 1. Get JupyStra
 
@@ -44,8 +44,8 @@ That's it.
 
 3. Start a server
  
-   ```bash
-   ./JupyStra.py <ecommonsID> --connect.
+   ```
+   $ ./JupyStra.py <ecommonsID> --connect.
    ```
 
 4. Enjoy Jupyter on Orchestra.
@@ -82,16 +82,16 @@ optional arguments:
 
 ## FAQ
 
-1. I want to use Jupyter on Orchestra, but I don't want to commit to conda. What can I do?
+1. *I want to use Jupyter on Orchestra, but I don't want to commit to conda. What can I do?*
 
    JupyStra will work so long as a Jupyter install exists on your Orchestra path. See [here](http://jupyter.readthedocs.io/en/latest/install.html)
    for other ways of installing Jupyter.
 
-2. JupyStra keeps writing shell scripts that I don't use. What can I do?
+2. *JupyStra keeps writing shell scripts that I don't use. What can I do?*
 
    Run JupyStra with the `--no_script` flag to suppress this behavior. Be warned: this can make reconnecting to a server (see below) more difficult.
 
-3. How long will a JupyStra server persist on Orchestra?
+3. *How long will a JupyStra server persist on Orchestra?*
 
    By default, the server is run in the `short` queue, so it will exist for 12 hours. If you want a longer-living server, you can submit to any queue you have
    access to using the `-q` flag. Be sure to also specify the walltime using the `-W` flag.
@@ -99,7 +99,7 @@ optional arguments:
    The python-mediated connection between your local machine and the server on Orchestra will die after 12 hours. You can reconnect (see below) if the server is still alive.
    The shell script connection will last indefinitely until the user kills it with `crtl^C`.
 
-4. I disconnected from the server. Can I reconnect to it?
+4. *I disconnected from the server. Can I reconnect to it?*
 
    Absolutely. Simply execute the shell script JupyStra wrote when you spanwed the server, and you'll be reconnected. 
 
@@ -111,13 +111,13 @@ optional arguments:
    ```bash
     $ ssh -t -L 8888:127.0.0.1:8888 -l <ecommonsID> orchestra.med.harvard.edu "ssh -N -L 8888:127.0.0.1:<port> <exec_host>"
    ``` 
-    and pointing you browser to http://localhost:8888
+    and pointing your browser to http://localhost:8888
 
-5. JupyStra launches a server in my `home/` directory, but I want it to launch in a different directory. Can I do this?
+5. *JupyStra launches a server in my `home/` directory, but I want it to launch in a different directory. Can I do this?*
 
    Sure. Simply pass `--cmds "cd path/to/your/dir"` to JupyStra and it will launch in the specified directory.
 
-6. Why am I prompted for my Orchestra password when JupyStra connects to the server? This is annoying. Make it stop!
+6. *Why am I prompted for my Orchestra password when JupyStra connects to the server? This is annoying. Make it stop!*
 
    The reason your prompted for a password is a bit technical. Basically, the architecture of Orchestra prevents direct access to compute nodes,
    so to access the server on a compute node, you must first go through a login node. Due to the security settings of Orchestra, the
@@ -133,18 +133,18 @@ optional arguments:
    5. Run `ssh-copy-id <EXEC_HOST>`
    Next time you connect to a server, you won't be prompted for a password. What's happening? In essence you gave your Orchestra account permission to access itself. Nifty, right?
 
-7. I tried connecting to the server and got something like this:
-   ```bash
+7. *I tried connecting to the server and got something like this:
+   ```
    bind: Address already in use
    channel_setup_fwd_listener_tcpip: cannot listen to port: <PORT>
    Could not request local forwarding.
    ```
-   What does that mean??
+   What does that mean??*
 
    That means the port JupyStra used to connect to the login node is already being used by something else (probably another JupyStra instance).
    While JupyStra attempts to minimize the probability of this occuring, it might still happen. Try spawning another server -- JupyStra will pick a different port.
 
-8. I'm done with my server but it's still running. How can I kill it?
+8. *I'm done with my server but it's still running. How can I kill it?*
 
    Login to Orchestra and use the standard `bkill <JOBID>` where `<JOBID>` is the ID of the Jupyter server job.
 
