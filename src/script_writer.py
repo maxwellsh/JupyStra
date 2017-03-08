@@ -1,7 +1,7 @@
 # script_write.py - Write bash script to connect to Jupyter notebook server on Orchestra
 #
-# v 0.0.5
-# rev 2017-03-07 (MS: more flexible script creation)
+# v 0.1.3
+# rev 2017-03-08 (MS: added shebang. Better server address output)
 # Notes: 
 
 # import pathlib2
@@ -24,6 +24,7 @@ class ShellWriter(object):
 
         self.f = open(self.fname, 'w')
 
+        self._write_shebang()
         self._write_help()
         self._write_msg(self.kwargs['port_local'])
         ssh_cmd = self.get_ssh_cmd()
@@ -33,6 +34,10 @@ class ShellWriter(object):
 
     def _write(self, string):
         self.f.write(string)
+
+    def _write_shebang(self):
+        shebang = "#! /bin/bash"
+        self.f.write(shebang)
 
     def _write_help(self):
         hlp = """ 
@@ -70,7 +75,7 @@ fi
         msg = """
 echo "Connecting to server"
 echo "If successful, the script will appear to hand. This is good"
-echo "In you browser, go to: 127.0.0.1:{}"
+echo "In you browser, go to: http://localhost:{}"
 echo ""
 echo "ctrl^c to exit"
 echo ""
