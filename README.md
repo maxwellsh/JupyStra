@@ -1,14 +1,15 @@
 # JupyStra
-Painlessly run Jupyter Notebook servers on Orchestra
+Painlessly run Jupyter notebook servers on Orchestra
 
 ## Description
-Orchestra does not officially support hosting Jupyter Notebook servers, but throught
-the magic of SSH port forwarding, a notebook server can be securely spawned and accessed.
+Orchestra does not officially support hosting Jupyter Notebook servers, but through
+the magic of SSH, a notebook server can be securely spawned and accessed.
+This process is non-trivial, so here we provide a simply python command line tool to
+take care of all the tricky port forwarding for you.
 
-This process of spawning and accessing is non-trivial..and frankly a pain in the ass.
-Here we provide a python api for spawning Jupyter notebook servers on orchestra. The
-api additionally creates a simple bash script which can be executed from any computer
-to connect to the spawned server on Orchestra.
+As an added bonus, the tool can output a bash script which can be run on any Linux / macOS
+computer in the world to establish a connection to the server...so long as the user has
+Orchestra login credentials.
 
 ## Dependencies
 python 3.x (likely 3.3+)

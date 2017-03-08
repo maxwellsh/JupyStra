@@ -1,8 +1,8 @@
 # spawn_server.py - Spawn a Jupyter Notebook server on Orchestra
 #
-# v 0.1.2
-# rev 2017-03-08 (MS: randomly generate remote port)
-# Notes: some clean-up
+# v 0.1.4
+# rev 2017-03-08 (MS: added python2.7 compatibility)
+# Notes:
 
 import paramiko
 import argparse
@@ -170,7 +170,10 @@ class Spawner(object):
         print("ctrl^C to disconnect")
 
         try:
-            p = subprocess.run(cmd, shell=True, timeout=timeout)
+            try:
+                p = subprocess.run(cmd, shell=True, timeout=timeout)
+            except AttributeError:
+                p = subprocess.call(cmd, shell=True)
         except KeyboardInterrupt:
             print("Connection to server killed by user")
 
