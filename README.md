@@ -28,23 +28,30 @@ That's it.
    $ wget https://repo.continuum.io/archive/Anaconda3-4.3.0-Linux-x86_64.sh
    $ bash Anaconda3-4.3.0-Linux-x86_64.sh
    ```
-   and following the onscreen prompts. Be sure to accept the .bashrc modification at the end.
+   and following the onscreen prompts. Be sure to accept the .bashrc modification at the end. Finally, open your .bashrc file
+   and move the final line (something like `export PATH=/path/to/anaconda3/bin:$PATH` to the very top of the file.
 
 1. Get JupyStra
 
-   In your directory of choice: `$ git clone https://github.com/msherman997/JupyStra.git`
+   On your local machine, navigate to a directory of choice and execute
+   ```bash
+   $ git clone https://github.com/msherman997/JupyStra.git
+   ```
 
 2. Install paramiko
-   `conda install paramiko` or `pip install paramiko`
 
-3. `./JupyStra <ecommonsID> --connect --no_script` to spawn and connect to a server.
+   On your local machine, execute: `conda install paramiko` or `pip install paramiko`
+
+3. Start a server
+ 
+   ```bash
+   ./JupyStra.py <ecommonsID> --connect.
+   ```
+
+4. Enjoy Jupyter on Orchestra.
 
 ## Usage
-usage: ./JupyStra.py [-h] [-P PASSWORD] [-p PORT] [-L LOCAL_PORT]
-                   [-r REMOTE_PORT] [-R MEM] [-q QUEUE] [-W WALL_TIME]
-                   [-o OUTFILE] [--cmds CMDS [CMDS ...]] [--no_script]
-                   [--connect]
-                   login_ID
+usage: ./JupyStra.py login_ID [options]
 
 Launch a Jupyter notebook server on Orchestra
 
@@ -73,10 +80,92 @@ optional arguments:
   + --no_script           do not output bash script to connect to server
   + --connect             automatically connect to server after establishing it
 
+## FAQ
+
+1. I want to use Jupyter on Orchestra, but I don't want to commit to conda. What can I do?
+
+   JupyStra will work so long as a Jupyter install exists on your Orchestra path. See [here](http://jupyter.readthedocs.io/en/latest/install.html)
+   for other ways of installing Jupyter.
+
+2. JupyStra keeps writing shell scripts that I don't use. What can I do?
+
+   Run JupyStra with the `--no_script` flag to suppress this behavior. Be warned: this can make reconnecting to a server (see below) more difficult.
+
+3. How long will a JupyStra server persist on Orchestra?
+
+   By default, the server is run in the `short` queue, so it will exist for 12 hours. If you want a longer-living server, you can submit to any queue you have
+   access to using the `-q` flag. Be sure to also specify the walltime using the `-W` flag.
+
+   The python-mediated connection between your local machine and the server on Orchestra will die after 12 hours. You can reconnect (see below) if the server is still alive.
+   The shell script connection will last indefinitely until the user kills it with `crtl^C`.
+
+4. I disconnected from the server. Can I reconnect to it?
+
+   Absolutely. Simply execute the shell script JupyStra wrote when you spanwed the server, and you'll be reconnected. 
+
+   If you suppressed the script output, you'll have to reconnect manually. To do this, you'll need to know the name of the compute node hosting the server and the port on which
+   the server is running. JupyStra writes this information to the terminal when the Server is established `Server is now running on host_name:port`,
+   so you can get the info from there. If you've closed the terminal, login to Orchestra and run `bjobs -w`. Look for the job with a JOB_NAME like
+   `jupyter notebook --port:<port> --browser=none`. Get the EXEC_HOST (minus the trailing .orchestra) and the `<port>` number from this output.
+   Finally, you can reconnect by running on your local machine a command such as:
+   ```bash
+    $ ssh -t -L 8888:127.0.0.1:8888 -l <ecommonsID> orchestra.med.harvard.edu "ssh -N -L 8888:127.0.0.1:<port> <exec_host>"
+   ``` 
+    and pointing you browser to http://localhost:8888
+
+5. JupyStra launches a server in my `home/` directory, but I want it to launch in a different directory. Can I do this?
+
+   Sure. Simply pass `--cmds "cd path/to/your/dir"` to JupyStra and it will launch in the specified directory.
+
+6. Why am I prompted for my Orchestra password when JupyStra connects to the server? This is annoying. Make it stop!
+
+   The reason your prompted for a password is a bit technical. Basically, the architecture of Orchestra prevents direct access to compute nodes,
+   so to access the server on a compute node, you must first go through a login node. Due to the security settings of Orchestra, the
+   connection from the login node to the compute node requires credential verification even though you've already verified when connecting
+   to the login node. I'm sure dev ops has a good reason for this...
+
+   We agree it's annoying. While we can't alter JupyStra to work around this, you can get around it on your end with the magic of RSA keys and the beauty of shared filesystems.
+   Here's what to do:
+   1. Use JupyStra to establish a server
+   2. Login to Orchestra.
+   3. Run `bjobs -w` to get the EXEC_HOST name (minus the trailing .orchestra)
+   4. Run `ssh-keygen -t rsa` and follow the prompts. Leave the password field empty.
+   5. Run `ssh-copy-id <EXEC_HOST>`
+   Next time you connect to a server, you won't be prompted for a password. What's happening? In essence you gave your Orchestra account permission to access itself. Nifty, right?
+
+7. I tried connecting to the server and got something like this:
+   ```bash
+   bind: Address already in use
+   channel_setup_fwd_listener_tcpip: cannot listen to port: <PORT>
+   Could not request local forwarding.
+   ```
+   What does that mean??
+
+   That means the port JupyStra used to connect to the login node is already being used by something else (probably another JupyStra instance).
+   While JupyStra attempts to minimize the probability of this occuring, it might still happen. Try spawning another server -- JupyStra will pick a different port.
+
+8. I'm done with my server but it's still running. How can I kill it?
+
+   Login to Orchestra and use the standard `bkill <JOBID>` where `<JOBID>` is the ID of the Jupyter server job.
+
 ## Under the hood
-spawn_server.py establishes an ssh connection to an Orchestra login node using the provided login ID and
-user-supplied password using paramiko. Any additional cmds provided are executed
-and then a job is submitted which establishes a Jupyter notebook server on a computer node.
-The script then monitors the job to ensure that it is running before obtaining the exec host name.
-Using the exec host name and provided ports, the script writes a bash script which allows any
-user with orchestra credentials to connect to the server.
+The establishment of a JupyStra server proceeds in several steps:
+
+1. JupyStra uses paramiko to establish an ssh connection to an Orchestra login node.
+    + By default JupyStra attempts to use RSA key authentication to establish the connection.
+    + If this fails, it will prompt the user for their Orchestra password and authenticate with the password
+2. JupyStra uses the ssh connection to submit a job on Orchestra which will establish a Jupyter server with access to a particular port
+3. JupyStra pings Orchestra to check the status of the job until the status is reported as `RUN`
+    + To prevent endless pinging, JupyStra will fail if the job isn't running after 20 checks (~45 seconds)
+4. Once the server is running, JupyStra queries Orchestra for the name of the compute node hosting the server.
+
+Connection to the server is a two step process, though JupyStra handles this as a single system command submitted via the subprocess module.
+The user will be prompted to enter passwords as necessary.
+
+1. An ssh connection is established between the local machine and an Orchestra login node using local port forwarding
+    + Local port forwarding connects a port on the local machine to a port on the login node
+2. A second ssh connection is opened between the login node and the compute node hosting the server again using local port fowarding
+    + The fowarding is done in such a way that the local port is daisy-chained to the compute node port to which the Jupyter server has access, 
+      effectively connecting the local machine to the Jupyter notebook server.
+    + Since this connection must remain active, JupyStra will hang at this point until the subprocess is terminated either because it times out
+      after 12 hours or is killed by the user using `ctrl^C`.
