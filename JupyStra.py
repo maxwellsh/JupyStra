@@ -2,9 +2,9 @@
 
 # JupyStra.py - top level script for JupySyta package
 #
-# v 0.2.0
+# v 0.2.0a
 # rev 2018-02-27 (MS: by default connects to o2)
-# Notes: 
+# Notes: Updated flag for connecting to Orchestra
 
 import argparse
 
@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument('--cmds', nargs='+', type=str, default=[], help='additional commands to run before launching the server')
     parser.add_argument('--no_script', dest='script', action='store_false', default=True, help='do not output bash script to connect to server')
     parser.add_argument('--connect', action='store_true', default=False, help='automatically connect to server after establishing it')
-    parser.add_argument('--notO2', dest="O2", action='store_false', default=True, help='Do not connect to O2. Will use Orchestra instead -- PLEASE SET WALLTIME MANUALLY.')
+    parser.add_argument('--orchestra', dest="O2", action='store_false', default=True, help='Connect to orchestra instead of O2 -- PLEASE SET WALLTIME MANUALLY.')
 
     return parser.parse_args()
 
