@@ -1,20 +1,21 @@
 # script_write.py - Write bash script to connect to Jupyter notebook server on Orchestra
 #
-# v 0.1.5
-# rev 2017-03-08 (MS: outputs shell script, not bash script)
+# v 0.2.0
+# rev 2018-02-27 (MS: server to connect to can be set)
 # Notes: 
 
 # import pathlib2
 import time
 
 class ShellWriter(object):
-    def __init__(self, exec_host, name="my_server", port_local=8888, port_remote=8888, port_jup=8888, username="$1"):
+    def __init__(self, exec_host, name="my_server", port_local=8888, port_remote=8888, port_jup=8888, username="$1", server="orchestra.med.harvard.edu"):
         self.kwargs = { 'exec_host': exec_host,
                         'name': name,
                         'port_local': port_local,
                         'port_remote': port_remote,
                         'port_jup': port_jup,
                         'username': username,
+                        'server': server,
         }
 
     def write_bash_script(self):
@@ -90,6 +91,7 @@ echo ""
         #           'exec_host': exec_host,
         #           'username': username
         # }
+        print(self.kwargs['server'])
 
-        cmd = "ssh -t -L {port_local}:127.0.0.1:{port_remote} -l {username} orchestra.med.harvard.edu \"ssh -N -L {port_remote}:127.0.0.1:{port_jup} {exec_host}\"".format(**self.kwargs)
+        cmd = "ssh -t -L {port_local}:127.0.0.1:{port_remote} -l {username} {server} \"ssh -N -L {port_remote}:127.0.0.1:{port_jup} {exec_host}\"".format(**self.kwargs)
         return cmd

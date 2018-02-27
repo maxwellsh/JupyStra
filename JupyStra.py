@@ -2,13 +2,14 @@
 
 # JupyStra.py - top level script for JupySyta package
 #
-# v 0.1.2
-# rev 2017-03-08 (MS: randomly generate remote port by default)
+# v 0.2.0
+# rev 2018-02-27 (MS: by default connects to o2)
 # Notes: 
 
 import argparse
 
 from src import spawn_server
+from src import spawn_server_o2
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Launch a Jupyter notebook server on Orchestra")
@@ -17,16 +18,22 @@ def parse_args():
     parser.add_argument('-p', '--port', type=str, default='8888', help='port on Orchestra which to start server')
     parser.add_argument('-L', '--local_port', type=str, default='8888', help='local port on which users connect to orchestra')
     parser.add_argument('-r', '--remote_port', type=str, default='random', help='remote port to use on login node')
-    parser.add_argument('-R', '--mem', type=str, default='8000', help='memory allocation for server')
+    parser.add_argument('-R', '--mem', type=str, default='8G', help='memory allocation for server')
+    parser.add_argument('-c', '--cores', type=str, default='1', help='number of cores to allocate to jupyter server')
     parser.add_argument('-q', '--queue', type=str, default='short', help='queue for server job execution')
-    parser.add_argument('-W', '--wall_time', type=str, default='12:00', help='wall time for server existence')
+    parser.add_argument('-W', '--wall_time', type=str, default='12:00:00', help='wall time for server existence')
     parser.add_argument('-o', '--outfile', type=str, default='jupyter.lsf', help='LSF output file for server job')
+    parser.add_argument('--count', type=int, default=20, help='maximum number of times to ping cluster when establishing server')
     parser.add_argument('--cmds', nargs='+', type=str, default=[], help='additional commands to run before launching the server')
     parser.add_argument('--no_script', dest='script', action='store_false', default=True, help='do not output bash script to connect to server')
     parser.add_argument('--connect', action='store_true', default=False, help='automatically connect to server after establishing it')
+    parser.add_argument('--notO2', dest="O2", action='store_false', default=True, help='Do not connect to O2. Will use Orchestra instead -- PLEASE SET WALLTIME MANUALLY.')
 
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-    spawn = spawn_server.Spawner(args)
+    if args.O2:
+        spawn = spawn_server_o2.Spawner(args)
+    else:    
+        spawn = spawn_server.Spawner(args)
