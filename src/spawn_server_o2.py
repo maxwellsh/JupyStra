@@ -1,8 +1,8 @@
 # spawn_server.py - Spawn a Jupyter Notebook server on O2
 #
-# v 0.2.0
-# rev 2018-02-27 (MS: Spawner specfically for O2)
-# Notes:
+# v 0.2.0b
+# rev 2018-03-16 (MS: Spawner specfically for O2)
+# Notes: '--no-browser' flag added to jupyter cmd
 
 import paramiko
 import argparse
@@ -112,7 +112,7 @@ class Spawner(object):
         if self.args.cmds:
             cmd += "; ".join(self.args.cmds) + "; "
 
-        cmd += "sbatch -p {queue} -t {walltime} -o {outfile} --mem {mem} -c {cores} jupyter notebook --port={port_jup} --browser=\"none\"\"".format(**kwargs)
+        cmd += "sbatch -p {queue} -t {walltime} -o {outfile} --mem {mem} -c {cores} jupyter notebook --port={port_jup} --no-browser\"".format(**kwargs)
 
         stdin, stdout, stderr = self.exec_cmd(cmd, verbose=False, output=True)
         out = stdout.read().decode('utf-8')
